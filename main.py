@@ -3,6 +3,7 @@ from numpy import sqrt
 from scipy.optimize import newton
 from scipy.stats import multivariate_normal
 from matplotlib import pyplot as plt
+import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation
 np.random.seed(10)
@@ -18,11 +19,12 @@ def G(X, R, r):
     s = sqrt(x**2 + y**2)
     return np.array([-2 * x * (R - s) / s, -2 * y * (R - s) / s, 2 * z])
 
+
 # @profile
 # line_profiler
-def mcmc_manifold(N, R, r):
+def mcmc_manifold(N, R, r, x0):
     X = np.zeros((N + 1, 3))
-    X[0] = [R, 0, r]
+    X[0] = x0
     sigma = 1
     accepted = 0
     for i in range(N):
@@ -52,21 +54,65 @@ def mcmc_manifold(N, R, r):
     return X, accepted / N
 
 
-def update_graph(num):
-    data = X[0:num]
-    graph._offsets3d = (data[:, 0], data[:, 1], data[:, 2])
-    # title.set_text('3D Test, time={}'.format(num))
+def crude_mc(N, R, r, x0):
+    X = np.zeros((N + 1, 3))
+    X[0] = x0
+    i = 0
+    fails = 0
+    while i < N:
+        [U, V, W] = np.random.uniform(size=3)
+        Theta = 2 * np.pi * U
+        Phi = 2 * np.pi * V
+        t = (R + r * np.cos(Theta)) / (r * R)
+        if W <= (R + r * np.cos(Theta)) / (r + R):
+            X[i + 1] = np.array([(R + r * np.cos(Theta)) * np.cos(Phi), (R + r * np.cos(Theta)) * np.sin(Phi),
+                                 r * np.sin(Theta)])
+            i += 1
+        else:
+            fails += 1
+    return X, N / (N + fails)
 
 
-X, prob = mcmc_manifold(100000, 1, 0.5)
-print(prob)
-print(np.where(X[:, 2] > 0.6))
+# def update_graph(num):
+#     data = X[0:num]
+#     graph._offsets3d = (data[:, 0], data[:, 1], data[:, 2])
+#     # title.set_text('3D Test, time={}'.format(num))
+
+
+R = 1
+r = 0.5
+Y, prob = crude_mc(1000, 1, 0.5, [R, 0, r])
+print("Crude MC acceptance rate:", prob)
+X, prob = mcmc_manifold(10000, 1, 0.5, [R, 0, r])
+X = X[0::10]
+print("MCMC acceptance rate:", prob)
+# print(np.where(X[:, 2] > 0.6))
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
-graph = ax.scatter(X[:, 0], X[:, 1], X[:, 2], s=2)
+ax.scatter(X[:, 0], X[:, 1], X[:, 2], s=2, label='MCMC')
 # graph = ax.scatter(X[0, 0], X[0, 1], X[0, 2], s=2)
 ax.set_xlim(-1.5, 1.5)
 ax.set_ylim(-1.5, 1.5)
 ax.set_zlim(-1, 1)
+ax.legend()
 # ani = matplotlib.animation.FuncAnimation(fig, update_graph, 1000, interval=10, blit=False)
+# theta = np.arccos(X[:, 2] / sqrt(X[:, 0]**2 + X[:, 1]**2 + X[:, 2]**2))
+# phi = np.sign(X[:, 1]) * np.arccos(X[:, 0] / sqrt(X[:, 0]**2 + X[:, 1]**2))
+# fig1, ax1 = plt.subplots(2, 1)
+# sns.histplot(ax=ax1[0], x=theta, bins=200)
+# sns.histplot(ax=ax1[1], x=phi, bins=200)
+# ax1[0].hist(theta, bins=100, label='theta sample dist', density=True)
+# ax1[1].hist(phi, bins=100, label='phi sample dist', density=True)
+# x = np.linspace(0, 6, 200)
+# ax1[1].plot(x, (1 + r / R * np.cos(x)) / 2 / np.pi, color='orange')
+# ax1[0].legend()
+# ax1[1].legend()
+
+fig2 = plt.figure()
+ax2 = fig2.add_subplot(projection='3d')
+ax2.scatter(Y[:, 0], Y[:, 1], Y[:, 2], s=2, color='red', label="Crude MC")
+ax2.set_xlim(-1.5, 1.5)
+ax2.set_ylim(-1.5, 1.5)
+ax2.set_zlim(-1, 1)
+ax2.legend()
 plt.show()
