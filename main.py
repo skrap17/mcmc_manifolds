@@ -6,7 +6,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation
-np.random.seed(10)
+# np.random.seed(10)
 
 
 def q(a, X, v, R, r):
@@ -25,7 +25,7 @@ def G(X, R, r):
 def mcmc_manifold(N, R, r, x0):
     X = np.zeros((N + 1, 3))
     X[0] = x0
-    sigma = 1
+    sigma = 1.25
     accepted = 0
     for i in range(N):
         X[i + 1] = X[i]
@@ -63,7 +63,7 @@ def crude_mc(N, R, r, x0):
         [U, V, W] = np.random.uniform(size=3)
         Theta = 2 * np.pi * U
         Phi = 2 * np.pi * V
-        t = (R + r * np.cos(Theta)) / (r * R)
+        # t = (R + r * np.cos(Theta)) / (r * R)
         if W <= (R + r * np.cos(Theta)) / (r + R):
             X[i + 1] = np.array([(R + r * np.cos(Theta)) * np.cos(Phi), (R + r * np.cos(Theta)) * np.sin(Phi),
                                  r * np.sin(Theta)])
@@ -81,11 +81,18 @@ def crude_mc(N, R, r, x0):
 
 R = 1
 r = 0.5
-Y, prob = crude_mc(1000, 1, 0.5, [R, 0, r])
+Y, prob = crude_mc(1000000, 1, 0.5, [R, 0, r])
+np.save("./chains/cmc_10_6_2.npy", Y)
+Z_cmc = 4 * np.pi**2 * r * R * np.mean(Y[:, 1]**2 + Y[:, 2]**2)
 print("Crude MC acceptance rate:", prob)
-X, prob = mcmc_manifold(10000, 1, 0.5, [R, 0, r])
-X = X[0::10]
+print("Crude MC Integral estimate:", Z_cmc)
+print()
+X, prob = mcmc_manifold(1000000, 1, 0.5, [R, 0, r])
+np.save("./chains/mcmc_10_6_2.npy", X)
+# X = X[0::10]
+Z_mcmc = 4 * np.pi**2 * r * R * np.mean(X[:, 1]**2 + X[:, 2]**2 )
 print("MCMC acceptance rate:", prob)
+print("MCMC Integral estimate:", Z_mcmc)
 # print(np.where(X[:, 2] > 0.6))
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
@@ -115,4 +122,6 @@ ax2.set_xlim(-1.5, 1.5)
 ax2.set_ylim(-1.5, 1.5)
 ax2.set_zlim(-1, 1)
 ax2.legend()
+
+
 plt.show()
