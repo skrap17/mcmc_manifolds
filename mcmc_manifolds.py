@@ -30,8 +30,11 @@ def mcmc_manifold(N, d, m, grad, q, x0, sigma, ineq_constraints=None, check=None
         print(i)
         X[i + 1] = X[i]
         Gx = grad(X[i])
+        tmp = np.linalg.qr(Gx, mode='complete')
         qrx = np.linalg.qr(Gx, mode='complete')[0][:, m:]
         t = multivariate_normal.rvs(cov=cov)
+        if not isinstance(t, np.ndarray):
+            t = [t]
         v = qrx @ t
         # tt = Gx.reshape(1, -1)[0]
         ttt = [v.dot(Gx[:, i]) for i in range(m)]
