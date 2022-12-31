@@ -22,8 +22,8 @@ def h(X):
 
 N = 10000
 x0 = np.array([1, 0, 0])
-sigma = 0.9
-X, prob = mcmc_manifold(N, 3, 1, G, q, x0, sigma, h)
+sigma = 1
+X, prob = mcmc_manifold(N, 3, 1, G, q, x0, sigma)
 print(prob)
 
 fig = plt.figure()

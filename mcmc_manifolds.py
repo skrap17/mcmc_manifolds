@@ -3,7 +3,7 @@ from numpy import sqrt
 from scipy.stats import multivariate_normal
 
 
-def project(q, z, Q, grad, dim, nmax=0, tol=0.01):
+def project(q, z, Q, grad, dim, nmax=0, tol=0.001):
     a = np.zeros(dim)
     i = 0
     if nmax == 0:
@@ -25,19 +25,20 @@ def mcmc_manifold(N, d, m, grad, q, x0, sigma, ineq_constraints=None, check=None
     X = np.zeros((N + 1, d))
     X[0] = x0
     accepted = 0
-    cov = np.eye(da) * sigma
+    cov = np.eye(da) * sigma**2
     for i in range(N):
         print(i)
         X[i + 1] = X[i]
         Gx = grad(X[i])
-        tmp = np.linalg.qr(Gx, mode='complete')
+        # rank = np.linalg.matrix_rank(Gx)
+        # tmp = np.linalg.qr(Gx, mode='complete')
         qrx = np.linalg.qr(Gx, mode='complete')[0][:, m:]
         t = multivariate_normal.rvs(cov=cov)
         if not isinstance(t, np.ndarray):
             t = [t]
         v = qrx @ t
         # tt = Gx.reshape(1, -1)[0]
-        ttt = [v.dot(Gx[:, i]) for i in range(m)]
+        # ttt = [v.dot(Gx[:, i]) for i in range(m)]
         a, flag = project(q, X[i] + v, Gx, grad, m)
         if not flag:
             continue

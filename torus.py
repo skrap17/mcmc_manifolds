@@ -21,7 +21,7 @@ def G(X):
 
 N = 10000
 x0 = np.array([R, 0, r])
-sigma = 0.5
+sigma = 0.47
 X, prob = mcmc_manifold(N, 3, 1, G, q, x0, sigma)
 print(prob)
 
