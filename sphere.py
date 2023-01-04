@@ -22,9 +22,10 @@ def h(X):
 
 N = 10000
 x0 = np.array([1, 0, 0])
-sigma = 1
-X, prob = mcmc_manifold(N, 3, 1, G, q, x0, sigma)
-print(prob)
+sigma = 0.9
+X, _ = mcmc_manifold(N, 3, 1, G, q, x0, sigma)
+Z_mcmc = np.mean(X[:, 0]**2 + X[:, 2]**2)
+print("MCMC Integral estimate:", Z_mcmc)
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')

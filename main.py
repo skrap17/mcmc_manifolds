@@ -6,6 +6,7 @@ from matplotlib import pyplot as plt
 import seaborn as sns
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.animation
+import line_profiler
 # np.random.seed(10)
 
 
@@ -22,6 +23,7 @@ def G(X, R, r):
 
 # @profile
 # line_profiler
+@profile
 def mcmc_manifold(N, R, r, x0):
     X = np.zeros((N + 1, 3))
     X[0] = x0
@@ -82,13 +84,13 @@ def crude_mc(N, R, r, x0):
 R = 1
 r = 0.5
 Y, prob = crude_mc(1000000, 1, 0.5, [R, 0, r])
-np.save("./chains/cmc_10_6_2.npy", Y)
+np.save("chains/old/cmc_10_6_2.npy", Y)
 Z_cmc = 4 * np.pi**2 * r * R * np.mean(Y[:, 1]**2 + Y[:, 2]**2)
 print("Crude MC acceptance rate:", prob)
 print("Crude MC Integral estimate:", Z_cmc)
 print()
 X, prob = mcmc_manifold(1000000, 1, 0.5, [R, 0, r])
-np.save("./chains/mcmc_10_6_2.npy", X)
+# np.save("./chains/mcmc_10_6_2.npy", X)
 # X = X[0::10]
 Z_mcmc = 4 * np.pi**2 * r * R * np.mean(X[:, 1]**2 + X[:, 2]**2 )
 print("MCMC acceptance rate:", prob)

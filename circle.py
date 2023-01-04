@@ -23,15 +23,18 @@ def G1(X):
     return np.array([[2*x, 2*x - 1], [2*y, 2*y], [2*z, 2*z]])
 
 
-N = 1000
+N = 10000
 a = (3. - sqrt(23.)) / 8.
 x0 = np.array([a, sqrt(1-a**2), 0])
 y0 = np.array([0.25, sqrt(15.) / 4., 0])
-sigma = 1.3
-X, prob = mcmc_manifold(N, 3, 2, G, q, x0, sigma)
-print(prob)
-Y, prob = mcmc_manifold(N, 3, 2, G1, q1, y0, sigma)
-print(prob)
+sigma = 2.2
+X, _ = mcmc_manifold(N, 3, 2, G, q, x0, sigma)
+Y, _ = mcmc_manifold(N, 3, 2, G1, q1, y0, sigma)
+Z_mcmc = np.mean(Y[:, 1]**2 + (Y[:, 0]-0.25)**2) * 16./15
+print("MCMC Integral estimate:", Z_mcmc)
+Z_mcmc1 = np.mean(Y[:, 1]**2 + Y[:, 2]**2) * 16./15
+print("MCMC Integral estimate:", Z_mcmc1)
+
 
 fig = plt.figure()
 ax = fig.add_subplot(projection='3d')
