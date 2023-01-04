@@ -73,7 +73,7 @@ def gen_son(d, N):
     X = np.zeros((N + 1, d, d))
     i = 0
     fails = 0
-    pbar = tqdm(range(N), desc="Samples generated")
+    pbar = tqdm(range(N + 1), desc="Samples generated", total=N + 1)
     while i <= N:
         A = np.random.normal(size=(d, d))
         Q, R = np.linalg.qr(A)
@@ -87,6 +87,7 @@ def gen_son(d, N):
         else:
             fails += 1
 
+    pbar.refresh()
     pbar.write("Acceptance probability: " + "{0:.2%}".format(N / (N + fails)) + '\n')
     return X
 
@@ -183,12 +184,12 @@ X = X.reshape((N + 1, d, d))
 traces = np.array([np.trace(Xi) for Xi in X])
 plt.subplots()
 df = pd.DataFrame(data=traces.T, columns=['Trace'])
-hist = sns.histplot(data=df, x='Trace', stat='density')
+hist = sns.histplot(data=df, x='Trace', bins=201, stat='density')
 x = np.linspace(-5, 5, 200)
 plt.plot(x, norm.pdf(x), color='red', linewidth=2, label='Theoretical density')
 plt.xlim((-5, 5))
 plt.legend()
-phi = np.array([np.arctan2(Xi[0, 0], Xi[1, 0]) for Xi in X])
-plt.subplots()
-plt.hist(phi, density=True)
+# phi = np.array([np.arctan2(Xi[0, 0], Xi[1, 0]) for Xi in X])
+# plt.subplots()
+# plt.hist(phi, density=True)
 plt.show()
