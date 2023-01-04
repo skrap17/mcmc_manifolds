@@ -7,7 +7,7 @@ from mcmc_manifolds import mcmc_manifold
 from scipy.stats import special_ortho_group
 import pandas as pd
 import seaborn as sns
-np.random.seed(10)
+np.random.seed(42)
 
 
 # @profile
@@ -72,13 +72,13 @@ np.random.seed(10)
 def gen_son(d, N):
     X = np.zeros((N + 1, d, d))
     i = 0
-    fails = 0
     while i <= N:
-        A = (np.random.normal(size=(d, d)) + 1j * np.random.normal(size=(d, d))) / sqrt(2.)
+        A = np.random.normal(size=(d, d))
         Q, R = np.linalg.qr(A)
-        D = np.diag(R)
+        D = np.diagonal(R)
         ph = np.diag(D / np.abs(D))
-        X[i] = Q @ ph @ Q
+        Y = Q @ ph
+        X[i] = Y
         i += 1
 
     return X
@@ -159,7 +159,7 @@ def is_so(X):
     return np.linalg.det(X.reshape(d, d)) > 0
 
 
-N = 100
+N = 100000
 d = 11
 # X = special_ortho_group.rvs(d, size=N + 1)
 grad_map = G_pre_process(d)
@@ -168,7 +168,8 @@ indices = np.triu_indices(d)
 # sigma = 2.1
 sigma = 0.28
 x0 = np.eye(d)
-X, _ = mcmc_manifold(N, d * d, int(d * (d + 1) / 2), G_new, q_new, x0.flatten(), sigma, is_so)
+# X, _ = mcmc_manifold(N, d * d, int(d * (d + 1) / 2), G_new, q_new, x0.flatten(), sigma, is_so)
+X = gen_son(d, N)
 # np.save("./chains/mcmc_son_10_6_.npy", X)
 # X = np.load("./chains/mcmc_son_10_6.npy")
 X = X.reshape((N + 1, d, d))
@@ -180,7 +181,7 @@ x = np.linspace(-5, 5, 200)
 plt.plot(x, norm.pdf(x), color='red', linewidth=2, label='Theoretical density')
 plt.xlim((-5, 5))
 plt.legend()
-# phi = np.array([np.arctan2(Xi[0, 0], Xi[1, 0]) for Xi in X])
-# plt.subplots()
-# plt.hist(phi, density=True)
+phi = np.array([np.arctan2(Xi[0, 0], Xi[1, 0]) for Xi in X])
+plt.subplots()
+plt.hist(phi, density=True)
 plt.show()
