@@ -1,5 +1,5 @@
 import numpy as np
-import scipy
+from tqdm import tqdm
 from numpy import sqrt
 from scipy.stats import norm
 from matplotlib import pyplot as plt
@@ -72,15 +72,22 @@ np.random.seed(42)
 def gen_son(d, N):
     X = np.zeros((N + 1, d, d))
     i = 0
+    fails = 0
+    pbar = tqdm(range(N), desc="Samples generated")
     while i <= N:
         A = np.random.normal(size=(d, d))
         Q, R = np.linalg.qr(A)
         D = np.diagonal(R)
         ph = np.diag(D / np.abs(D))
         Y = Q @ ph
-        X[i] = Y
-        i += 1
+        if np.linalg.det(Y) > 0:
+            X[i] = Y
+            i += 1
+            pbar.update(1)
+        else:
+            fails += 1
 
+    pbar.write("Acceptance probability: " + "{0:.2%}".format(N / (N + fails)) + '\n')
     return X
 
 
@@ -159,7 +166,7 @@ def is_so(X):
     return np.linalg.det(X.reshape(d, d)) > 0
 
 
-N = 100000
+N = 1000000
 d = 11
 # X = special_ortho_group.rvs(d, size=N + 1)
 grad_map = G_pre_process(d)
