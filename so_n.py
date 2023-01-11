@@ -1,75 +1,22 @@
+import sys
 import numpy as np
 from tqdm import tqdm
 from numpy import sqrt
-from scipy.stats import norm
+from scipy.stats import norm, kstest
 from matplotlib import pyplot as plt
-from mcmc_manifolds import mcmc_manifold
-from scipy.stats import special_ortho_group
+from mcmc_manifolds import mcmc_manifold, profile
 import pandas as pd
 import seaborn as sns
 np.random.seed(42)
+sns.set()
+# np.random.seed(12345)
+# np.random.seed(10)
+
+# for profiling run in terminal
+# kernprof -l -v script_to_profile.py
 
 
-# @profile
-# def project(q, z, Q, grad, dim, nmax=0, tol=0.001):
-#     a = np.zeros(dim)
-#     i = 0
-#     if nmax == 0:
-#         nmax = 3 * dim
-#     stop = False
-#     while not stop:
-#         arg = z + Q @ a
-#         q_arg = q(arg)
-#         # da = -np.linalg.pinv(grad(arg).T @ Q) @ q_arg
-#         da = np.linalg.solve(grad(arg).T @ Q, -q_arg)
-#         a = a + da
-#         i += 1
-#         stop = np.linalg.norm(q_arg) < tol
-#         if i > nmax:
-#             return a, False
-#     return a, np.linalg.norm(q(z + Q @ a)) < tol
-#
-
-# @profile
-# def mcmc_manifold(N, d, m, grad, q, x0, sigma, ineq_constraints=None):
-#     da = d - m
-#     X = np.zeros((N + 1, d))
-#     X[0] = x0
-#     accepted = 0
-#     # rev_proj_fail = 0
-#     for i in range(N):
-#         print(i)
-#         X[i + 1] = X[i]
-#         Gx = grad(X[i])
-#         qrx = np.linalg.qr(Gx, mode='complete')[0][:, m:]
-#         t = np.random.normal(size=da) * sigma
-#         if not isinstance(t, np.ndarray):
-#             t = [t]
-#         v = qrx @ t
-#         a, flag = project(q, X[i] + v, Gx, grad, m)
-#         if not flag:
-#             continue
-#         w = Gx @ a
-#         Y = X[i] + v + w
-#         if ineq_constraints is not None and not ineq_constraints(Y):
-#             continue
-#         Gy = grad(Y)
-#         qry = np.linalg.qr(Gy, mode='complete')[0][:, m:]
-#         v_ = qry @ qry.T @ (X[i] - Y)
-#         alpha = min(1, np.exp(-(np.linalg.norm(v_) ** 2 - np.linalg.norm(v) ** 2) / 2 / sigma ** 2))
-#         U = np.random.uniform()
-#         if U > alpha:
-#             continue
-#         reversebility_check, flag = project(q, Y + v_, Gy, grad, m)
-#         if not flag:
-#             continue
-#         X[i + 1] = Y
-#         accepted += 1
-#
-#     return X, accepted / N
-
-
-def gen_son(d, N):
+def gen_son(d, N, f):
     X = np.zeros((N + 1, d, d))
     i = 0
     fails = 0
@@ -85,10 +32,16 @@ def gen_son(d, N):
             i += 1
             pbar.update(1)
         else:
-            fails += 1
+            if f:
+                Y[[0, 1]] = Y[[1, 0]]
+                X[i] = Y
+                i += 1
+                pbar.update(1)
+            else:
+                fails += 1
 
-    pbar.refresh()
-    pbar.write("Acceptance probability: " + "{0:.2%}".format(N / (N + fails)) + '\n')
+    pbar.close()
+    print("Acceptance probability: " + "{0:.2%}".format(N / (N + fails)) + '\n')
     return X
 
 
@@ -167,21 +120,43 @@ def is_so(X):
     return np.linalg.det(X.reshape(d, d)) > 0
 
 
-N = 1000000
-d = 11
-# X = special_ortho_group.rvs(d, size=N + 1)
+N = 200000
+d = 2
 grad_map = G_pre_process(d)
 q_rhs = np.eye(d)
 indices = np.triu_indices(d)
-# sigma = 2.1
-sigma = 0.28
+sigma = 2.1
+# sigma = 0.28
 x0 = np.eye(d)
+# x0 = x0[:, np.random.permutation(d)]
+# while np.linalg.det(x0) < 0:
+#     x0 = x0[:, np.random.permutation(d)]
 # X, _ = mcmc_manifold(N, d * d, int(d * (d + 1) / 2), G_new, q_new, x0.flatten(), sigma, is_so)
-X = gen_son(d, N)
-# np.save("./chains/mcmc_son_10_6_.npy", X)
-# X = np.load("./chains/mcmc_son_10_6.npy")
-X = X.reshape((N + 1, d, d))
+if '-p' in sys.argv:
+    profile.print_stats()
+# X = gen_son(d, N)
+# np.save("./chains/so_n/so_2.npy", X)
+# X = np.load("./chains/so_n/mcmc_son_10_6.npy")
+X = np.load("./chains/so_n/so_2.npy")
+# X = X[0::10]
+# Y = gen_son(d, N, False)
+# Y_ = gen_son(d, N, True)
+# x0 = X[25000]
+# N = 10000
+# X, _ = mcmc_manifold(N, d * d, int(d * (d + 1) / 2), G_new, q_new, x0.flatten(), sigma, is_so)
+X = X.reshape((X.shape[0], d, d))
+# b = X[-1]
+# X = X[:29000]
+# a = X[-1]
+# aa = np.linalg.det(a)
+# aaa = q_new(a.reshape(d*d))
+# X = X[:30000]
 traces = np.array([np.trace(Xi) for Xi in X])
+# traces1 = np.array([np.trace(Xi) for Xi in Y])
+# traces2 = np.array([np.trace(Xi) for Xi in Y_])
+# print(kstest(traces, traces1))
+# print(kstest(traces, traces2))
+# print(kstest(traces1, traces2))
 plt.subplots()
 df = pd.DataFrame(data=traces.T, columns=['Trace'])
 hist = sns.histplot(data=df, x='Trace', bins=201, stat='density')
@@ -189,7 +164,22 @@ x = np.linspace(-5, 5, 200)
 plt.plot(x, norm.pdf(x), color='red', linewidth=2, label='Theoretical density')
 plt.xlim((-5, 5))
 plt.legend()
-# phi = np.array([np.arctan2(Xi[0, 0], Xi[1, 0]) for Xi in X])
-# plt.subplots()
+phi = np.array([np.arctan2(Xi[0, 0], Xi[1, 0]) for Xi in X])
+plt.subplots()
+df1 = pd.DataFrame(data=phi.T, columns=['Phi'])
+sns.histplot(data=df1, x='Phi', stat='density')
+
+
+def cdf1(x):
+    if x < -np.pi or x > np.pi:
+        return 0
+    return (x + np.pi ) / 2. / np.pi
+
+
+x = np.linspace(-np.pi, np.pi, 100)
+plt.subplots()
+sns.ecdfplot(x=phi)
+plt.plot(x, np.vectorize(cdf1)(x))
+print("KS test for Phi:", kstest(phi, np.vectorize(cdf1)))
 # plt.hist(phi, density=True)
 plt.show()
